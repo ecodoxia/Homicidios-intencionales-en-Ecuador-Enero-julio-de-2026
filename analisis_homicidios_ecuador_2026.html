@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Homicidios Intencionales en Ecuador · Análisis Enero-Julio 2026</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root{
+    --bg:#0f1115; --card:#171a21; --card2:#1d212a; --line:#2a2f3a;
+    --red:#e4572e; --red2:#c9452a; --amber:#f2a541; --blue:#4fa3d1; --green:#5fb37a;
+    --text:#eef0f3; --sub:#a3aab8; --muted:#7b8494;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font-family:'Segoe UI',Arial,Helvetica,sans-serif;
+    line-height:1.5;
+  }
+  .wrap{max-width:980px; margin:0 auto; padding:28px 18px 60px;}
+  header.hero{
+    background:linear-gradient(135deg,#2a0e0a,#171a21 65%);
+    border:1px solid var(--line); border-radius:16px; padding:28px 24px; margin-bottom:22px;
+  }
+  header.hero .tag{
+    display:inline-block; background:var(--red); color:#fff; font-size:12px; font-weight:700;
+    letter-spacing:.06em; padding:4px 10px; border-radius:20px; text-transform:uppercase; margin-bottom:12px;
+  }
+  h1{font-size:26px; margin:0 0 8px; line-height:1.25;}
+  .subtitle{color:var(--sub); font-size:14.5px; margin:0;}
+  .source-line{color:var(--muted); font-size:12.5px; margin-top:14px;}
+  h2{font-size:19px; margin:34px 0 4px; border-left:4px solid var(--red); padding-left:10px;}
+  h2 .num{color:var(--red); margin-right:6px;}
+  p.lead{color:var(--sub); font-size:14.5px; margin:6px 0 18px; max-width:70ch;}
+  .kpis{display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:12px; margin:18px 0 6px;}
+  .kpi{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px;}
+  .kpi .v{font-size:24px; font-weight:800; color:var(--red);}
+  .kpi .l{font-size:12px; color:var(--sub); margin-top:4px;}
+  .card{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:18px; margin:14px 0;}
+  .chart-box{position:relative; height:300px;}
+  .chart-box.tall{height:360px;}
+  .callout{
+    border:1px solid #3a3120; background:#221c12; border-left:4px solid var(--amber);
+    border-radius:10px; padding:16px 18px; margin:16px 0; font-size:14px; color:#f2e4c8;
+  }
+  .callout.blue{border-color:#1c2a38; background:#101c26; border-left-color:var(--blue); color:#cfe6f5;}
+  .callout b{color:#fff;}
+  .grid2{display:grid; grid-template-columns:1fr; gap:14px;}
+  @media(min-width:720px){.grid2{grid-template-columns:1fr 1fr;}}
+  table{width:100%; border-collapse:collapse; font-size:13.5px; margin-top:8px;}
+  th,td{text-align:left; padding:7px 8px; border-bottom:1px solid var(--line);}
+  th{color:var(--sub); font-weight:600; font-size:12px; text-transform:uppercase; letter-spacing:.03em;}
+  td.num{text-align:right; font-variant-numeric:tabular-nums;}
+  .badge{display:inline-block; font-size:11px; padding:2px 7px; border-radius:6px; font-weight:700;}
+  .badge.up{background:#3a1414; color:#ff8b73;}
+  .badge.down{background:#123a1e; color:#7ee2a0;}
+  footer{margin-top:40px; padding-top:16px; border-top:1px solid var(--line); font-size:12px; color:var(--muted);}
+  footer a{color:var(--blue);}
+  .src-list{font-size:12px; color:var(--muted); margin-top:6px;}
+  .src-list li{margin-bottom:4px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="hero">
+    <span class="tag">Análisis de datos abiertos</span>
+    <h1>Homicidios intencionales en Ecuador<br>Enero–julio de 2026</h1>
+    <p class="subtitle">Análisis del microdato oficial del Ministerio del Interior (DINASED), publicado el 19 de agosto de 2026, contrastado con series históricas y comparaciones internacionales.</p>
+    <div class="source-line">Fuente base: Ministerio del Interior del Ecuador — Estadística de Homicidios Intencionales, cobertura enero–julio de 2026 (4.882 registros individuales).</div>
+  </header>
+
+  <div class="kpis">
+    <div class="kpi"><div class="v">4.882</div><div class="l">víctimas de homicidio intencional, ene–jul 2026</div></div>
+    <div class="kpi"><div class="v">23,0</div><div class="l">víctimas por día en promedio</div></div>
+    <div class="kpi"><div class="v">88,2%</div><div class="l">cometidos con arma de fuego</div></div>
+    <div class="kpi"><div class="v">91,0%</div><div class="l">de las víctimas son hombres</div></div>
+  </div>
+
+  <h2><span class="num">1.</span>¿Es 2026 el año más violento de la historia de Ecuador?</h2>
+  <p class="lead">La respuesta, con los datos disponibles hoy, es matizada: 2026 sigue siendo un año extremo por estándares históricos, pero <b>no está batiendo el récord de 2025</b> — de hecho, va levemente por debajo.</p>
+
+  <div class="card">
+    <div class="chart-box tall"><canvas id="histChart"></canvas></div>
+  </div>
+
+  <div class="callout">
+    <b>Ecuador vivió su año más violento registrado en 2025</b>, con 9.216 homicidios intencionales (tasa de 50,9 por 100.000 habitantes), superando el anterior récord de 2023 (8.248 casos). Esa escalada partió de una base casi estable de ~1.300–1.500 homicidios anuales hasta 2020.
+  </div>
+
+  <div class="callout blue">
+    <b>Lo que muestra el archivo de 2026:</b> entre enero y julio se registraron 4.882 homicidios, frente a los <b>5.268</b> del mismo periodo de 2025 (dato del propio Ministerio del Interior). Eso es una caída de <b>-7,3%</b> interanual. Si el ritmo de estos siete meses se mantuviera todo el año, 2026 cerraría alrededor de 8.370 casos — por debajo del récord de 2025, aunque todavía muy por encima de 2024 (7.062) y de cualquier año anterior a 2023.
+  </div>
+
+  <p class="lead">En síntesis: los datos no respaldan que 2026 sea "el año más violento de la historia" — ese título, hasta ahora, lo tiene 2025. Lo que sí es correcto decir es que Ecuador atraviesa el periodo más violento de su historia reciente (2023-2026 son, en ese orden, los cuatro peores años registrados), y que 2026 se mantiene en niveles de crisis, incluso si desacelera frente al pico anterior.</p>
+
+  <h2><span class="num">2.</span>Evolución mensual dentro de 2026</h2>
+  <div class="card">
+    <div class="chart-box"><canvas id="monthChart"></canvas></div>
+  </div>
+  <p class="lead">Enero fue el mes más violento del periodo (760 casos), con una ligera desaceleración hacia marzo (667) y una tendencia estable, entre 670 y 700 homicidios mensuales, de abril a julio.</p>
+
+  <h2><span class="num">3.</span>¿Es Ecuador de los países más violentos del mundo?</h2>
+  <p class="lead">Aquí la evidencia es contundente. Con datos de 2024-2025 (ONU / InSight Crime / Statista), Ecuador se ubica de forma consistente en el <b>1er o 2do lugar mundial</b> por tasa de homicidios, solo detrás de Jamaica o Haití según el año y la fuente — y por delante de países con fama de muy violentos como Sudáfrica, Honduras o Colombia.</p>
+
+  <div class="card">
+    <div class="chart-box"><canvas id="worldChart"></canvas></div>
+  </div>
+  <p class="lead" style="font-size:12.5px;">Tasas de homicidios por 100.000 habitantes. Ecuador 2025: 50,9 (Ministerio del Interior / INEC). Resto de países: datos ONU / InSight Crime recopilados en 2024-2025. Las metodologías y la fiabilidad de los registros varían entre países, por lo que el orden exacto entre los primeros lugares cambia levemente según la fuente.</p>
+
+  <div class="callout">
+    Según InSight Crime, <b>Ecuador fue en 2025 el país más violento de América Latina</b> medido por tasa de homicidios, superando incluso a Colombia y Honduras. Comparaciones basadas en datos de la ONU (Our World in Data) ubican a Ecuador en 2do lugar mundial en 2024, solo por debajo de Jamaica.
+  </div>
+
+  <h2><span class="num">4.</span>¿Dónde ocurre la violencia?</h2>
+  <div class="grid2">
+    <div class="card">
+      <div class="chart-box"><canvas id="provChart"></canvas></div>
+    </div>
+    <div class="card">
+      <table>
+        <tr><th>Provincia</th><th class="num">Casos</th><th class="num">%</th></tr>
+        <tr><td>Guayas</td><td class="num">2.028</td><td class="num">41,5%</td></tr>
+        <tr><td>Manabí</td><td class="num">705</td><td class="num">14,4%</td></tr>
+        <tr><td>El Oro</td><td class="num">634</td><td class="num">13,0%</td></tr>
+        <tr><td>Los Ríos</td><td class="num">558</td><td class="num">11,4%</td></tr>
+        <tr><td>Esmeraldas</td><td class="num">196</td><td class="num">4,0%</td></tr>
+        <tr><td>Pichincha</td><td class="num">165</td><td class="num">3,4%</td></tr>
+        <tr><td>Santa Elena</td><td class="num">141</td><td class="num">2,9%</td></tr>
+        <tr><td>Resto del país (17 prov.)</td><td class="num">455</td><td class="num">9,4%</td></tr>
+      </table>
+    </div>
+  </div>
+  <p class="lead">Solo cuatro provincias costeras — Guayas, Manabí, El Oro y Los Ríos — concentran el <b>80,3%</b> de todos los homicidios intencionales del país entre enero y julio de 2026, pese a tener menos de la mitad de la población nacional. La violencia sigue siendo, ante todo, un fenómeno de la Costa vinculado a disputas territoriales de bandas por rutas del narcotráfico.</p>
+
+  <h2><span class="num">5.</span>Cómo se mata: armas y contexto</h2>
+  <div class="grid2">
+    <div class="card">
+      <div class="chart-box"><canvas id="armaChart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="chart-box"><canvas id="motivChart"></canvas></div>
+    </div>
+  </div>
+  <p class="lead">El arma de fuego domina de forma abrumadora (88,2%), muy por delante del arma blanca (7,3%). El 96,2% de los casos se atribuye presuntamente a "delincuencia común" — categoría en la que las autoridades incluyen buena parte de los ajustes de cuentas y disputas de bandas criminales — y apenas un 0,9% a violencia intrafamiliar.</p>
+
+  <h2><span class="num">6.</span>Perfil de las víctimas</h2>
+  <div class="grid2">
+    <div class="card">
+      <div class="chart-box"><canvas id="sexoChart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="chart-box"><canvas id="edadChart"></canvas></div>
+    </div>
+  </div>
+  <p class="lead">El 91,0% de las víctimas son hombres. El grupo de 18 a 34 años concentra el 58,4% de los casos. De forma alarmante, <b>357 víctimas (7,5% del total con edad registrada) eran menores de 18 años</b> — más de una y media por día en promedio durante estos siete meses.</p>
+
+  <h2><span class="num">7.</span>Conclusiones</h2>
+  <div class="callout">
+    <b>Lo que los datos respaldan con solidez:</b>
+    <ul style="margin:8px 0 0; padding-left:18px;">
+      <li>Ecuador atraviesa la crisis de homicidios más grave de su historia moderna: de ~1.400 casos anuales en 2020 a más de 9.000 en 2025, un incremento de más del 500% en cinco años.</li>
+      <li>Por tasa de homicidios, Ecuador compite por el primer o segundo lugar mundial, superando a países tradicionalmente asociados con violencia extrema (Honduras, Sudáfrica, Colombia).</li>
+      <li>La violencia es abrumadoramente letal por arma de fuego, se concentra en cuatro provincias costeras y golpea sobre todo a hombres jóvenes — con un número preocupante de menores de edad entre las víctimas.</li>
+    </ul>
+  </div>
+  <div class="callout blue">
+    <b>Lo que los datos NO respaldan:</b> que 2026 sea, hasta julio, "el año más violento de la historia". Esa marca la tiene 2025. El periodo enero-julio de 2026 muestra una caída del 7,3% frente al mismo tramo de 2025. Afirmar lo contrario sin esta salvedad sería tergiversar la cifra oficial más reciente.
+  </div>
+
+  <footer>
+    <div><b>Fuentes consultadas</b></div>
+    <ul class="src-list">
+      <li>Ministerio del Interior del Ecuador (DINASED) — Estadística de Homicidios Intencionales, ene-jul 2026 (archivo base de este análisis).</li>
+      <li>El Universo — "Homicidios intencionales en Ecuador superan el total de 2024 en solo 10 meses de 2025" y "Ecuador cerró 2025 con 25 asesinatos diarios" (eluniverso.com).</li>
+      <li>La República / Radio Pichincha — cobertura de la comparación ene-jul 2025 vs 2024 (5.268 casos) y ranking mundial ONU 2024.</li>
+      <li>Observatorio Ecuatoriano de Crimen Organizado (OECO/PADF) — Boletines anuales y semestrales 2023-2025 (oeco.padf.org).</li>
+      <li>InSight Crime — "2025 Homicide Round-Up" (insightcrime.org); Bloomberg Línea, cobertura del mismo informe.</li>
+      <li>Statista / Our World in Data — tasas comparadas de homicidios en América Latina y el Caribe, 2025.</li>
+      <li>Primicias.ec — perfil de víctimas 2025 y desglose por arma y motivación.</li>
+    </ul>
+    <p style="margin-top:14px;">Análisis generado a partir del microdato oficial. Las cifras de años anteriores a 2026 provienen de fuentes periodísticas y de observatorios especializados que citan al Ministerio del Interior; pueden existir pequeñas discrepancias entre fuentes por fecha de corte de los datos.</p>
+  </footer>
+</div>
+
+<script>
+const redPalette = ['#e4572e','#f2a541','#c9452a','#f2c94c','#8a3324','#d98236','#a13a24','#f4d35e'];
+
+// 1. Historical chart
+new Chart(document.getElementById('histChart'), {
+  type:'bar',
+  data:{
+    labels:['2020','2021','2022','2023','2024','2025','2026\n(proy. si sigue el ritmo actual)'],
+    datasets:[{
+      label:'Homicidios intencionales (anual)',
+      data:[1372,2495,4600,8248,7062,9216,8369],
+      backgroundColor: ['#3a4150','#3a4150','#3a4150','#c9452a','#3a4150','#e4572e','#4fa3d1'],
+      borderRadius:6
+    }]
+  },
+  options:{
+    plugins:{legend:{display:false}, tooltip:{callbacks:{label:(c)=> c.parsed.y.toLocaleString('es-EC')+' homicidios'}}},
+    scales:{
+      y:{beginAtZero:true, grid:{color:'#2a2f3a'}, ticks:{color:'#a3aab8'}},
+      x:{grid:{display:false}, ticks:{color:'#a3aab8', font:{size:11}}}
+    }
+  }
+});
+
+// 2. Monthly 2026
+new Chart(document.getElementById('monthChart'), {
+  type:'line',
+  data:{
+    labels:['Ene','Feb','Mar','Abr','May','Jun','Jul'],
+    datasets:[{
+      label:'Homicidios por mes (2026)',
+      data:[760,684,667,677,697,693,704],
+      borderColor:'#e4572e', backgroundColor:'rgba(228,87,46,0.15)',
+      fill:true, tension:0.3, pointRadius:4, pointBackgroundColor:'#e4572e'
+    }]
+  },
+  options:{
+    plugins:{legend:{display:false}},
+    scales:{
+      y:{beginAtZero:false, min:600, grid:{color:'#2a2f3a'}, ticks:{color:'#a3aab8'}},
+      x:{grid:{display:false}, ticks:{color:'#a3aab8'}}
+    }
+  }
+});
+
+// 3. World comparison
+new Chart(document.getElementById('worldChart'), {
+  type:'bar',
+  data:{
+    labels:['Jamaica','Ecuador (2025)','Sudáfrica','Haití','Honduras','Colombia','México'],
+    datasets:[{
+      label:'Tasa de homicidios por 100.000 hab.',
+      data:[49.3,50.9,43.7,41.2,31.4,24.9,24.9],
+      backgroundColor:['#3a4150','#e4572e','#3a4150','#3a4150','#3a4150','#3a4150','#3a4150'],
+      borderRadius:6
+    }]
+  },
+  options:{
+    indexAxis:'y',
+    plugins:{legend:{display:false}},
+    scales:{
+      x:{beginAtZero:true, grid:{color:'#2a2f3a'}, ticks:{color:'#a3aab8'}},
+      y:{grid:{display:false}, ticks:{color:'#eef0f3'}}
+    }
+  }
+});
+
+// 4. Provincias
+new Chart(document.getElementById('provChart'), {
+  type:'bar',
+  data:{
+    labels:['Guayas','Manabí','El Oro','Los Ríos','Esmeraldas','Pichincha','Santa Elena','Otras'],
+    datasets:[{
+      data:[2028,705,634,558,196,165,141,455],
+      backgroundColor: redPalette,
+      borderRadius:6
+    }]
+  },
+  options:{
+    indexAxis:'y',
+    plugins:{legend:{display:false}},
+    scales:{
+      x:{beginAtZero:true, grid:{color:'#2a2f3a'}, ticks:{color:'#a3aab8'}},
+      y:{grid:{display:false}, ticks:{color:'#eef0f3'}}
+    }
+  }
+});
+
+// 5. Arma
+new Chart(document.getElementById('armaChart'), {
+  type:'doughnut',
+  data:{
+    labels:['Arma de fuego','Arma blanca','Otros','Contundente','Constrictora','Sustancias'],
+    datasets:[{ data:[88.2,7.3,2.3,1.2,0.9,0.1], backgroundColor: redPalette }]
+  },
+  options:{
+    plugins:{legend:{position:'bottom', labels:{color:'#a3aab8', boxWidth:12, font:{size:11}}}}
+  }
+});
+
+// 6. Motivacion
+new Chart(document.getElementById('motivChart'), {
+  type:'doughnut',
+  data:{
+    labels:['Delincuencia común','Violencia comunitaria','Violencia intrafamiliar','Otros'],
+    datasets:[{ data:[96.2,2.8,0.9,0.1], backgroundColor: ['#e4572e','#f2a541','#4fa3d1','#3a4150'] }]
+  },
+  options:{
+    plugins:{legend:{position:'bottom', labels:{color:'#a3aab8', boxWidth:12, font:{size:11}}}}
+  }
+});
+
+// 7. Sexo
+new Chart(document.getElementById('sexoChart'), {
+  type:'doughnut',
+  data:{
+    labels:['Hombres','Mujeres','No determinado'],
+    datasets:[{ data:[91.0,8.6,0.4], backgroundColor:['#e4572e','#4fa3d1','#3a4150'] }]
+  },
+  options:{
+    plugins:{legend:{position:'bottom', labels:{color:'#a3aab8', boxWidth:12, font:{size:11}}}}
+  }
+});
+
+// 8. Edad
+new Chart(document.getElementById('edadChart'), {
+  type:'bar',
+  data:{
+    labels:['<18','18-34','35-54','55+'],
+    datasets:[{
+      data:[7.5,58.4,28.9,5.1],
+      backgroundColor:['#f2a541','#e4572e','#c9452a','#8a3324'],
+      borderRadius:6
+    }]
+  },
+  options:{
+    plugins:{legend:{display:false}, tooltip:{callbacks:{label:(c)=>c.parsed.y+'% de las víctimas'}}},
+    scales:{
+      y:{beginAtZero:true, grid:{color:'#2a2f3a'}, ticks:{color:'#a3aab8', callback:(v)=>v+'%'}},
+      x:{grid:{display:false}, ticks:{color:'#a3aab8'}}
+    }
+  }
+});
+</script>
+</body>
+</html>
