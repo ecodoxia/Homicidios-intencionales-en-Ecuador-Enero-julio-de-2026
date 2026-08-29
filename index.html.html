@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard de análisis - Ecuador</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <style>
+    :root {
+      --bg: #0d1220;
+      --bg-soft: #121b2d;
+      --panel: #171f2d;
+      --sidebar: #0f172a;
+      --line: rgba(148, 163, 184, 0.18);
+      --text: #ebf0fa;
+      --muted: #9aa9c4;
+      --primary: #ef5a2a;
+      --primary-soft: rgba(239, 90, 42, 0.12);
+      --accent: #49a0d8;
+      --success: #48c78f;
+      --warning: #f7b955;
+      --shadow: 0 15px 30px rgba(0,0,0,0.22);
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, #0a1220, #101a2a 60%, #141d2d);
+      color: var(--text);
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      overflow: hidden;
+    }
+
+    body { display: flex; }
+
+    .app {
+      display: grid;
+      grid-template-columns: 240px 1fr;
+      width: 100%;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .sidebar {
+      background: rgba(15, 23, 42, 0.96);
+      border-right: 1px solid var(--line);
+      padding: 20px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .brand-mark {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      display: grid;
+      place-items: center;
+      font-weight: 800;
+      color: white;
+      background: linear-gradient(135deg, var(--primary), #ff8d5d);
+      box-shadow: var(--shadow);
+    }
+
+    .brand h2 { margin: 0; font-size: 1.05rem; }
+    .brand span {
+      display: block;
+      font-size: 0.7rem;
+      color: var(--muted);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .nav { display: flex; flex-direction: column; gap: 8px; }
+
+    .nav-title {
+      font-size: 0.7rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      margin: 6px 10px;
+    }
+
+    .nav-item {
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--text);
+      text-align: left;
+      padding: 11px 12px;
+      border-radius: 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.95rem;
+      transition: 0.2s ease;
+    }
+
+    .nav-item:hover,
+    .nav-item.active {
+      background: rgba(255,255,255,0.04);
+      border-color: rgba(239, 90, 42, 0.2);
+      box-shadow: inset 0 0 0 1px rgba(239,90,42,0.12);
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--primary);
+      box-shadow: 0 0 12px rgba(239,90,42,0.8);
+      display: inline-block;
+    }
+
+    .sidebar-footer {
+      margin-top: auto;
+      padding: 14px 12px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+    }
+
+    .sidebar-footer strong { display: block; margin-bottom: 8px; font-size: 0.8rem; }
+    .sidebar-footer span {
+      color: var(--muted);
+      font-size: 0.74rem;
+      line-height: 1.5;
+    }
+
+    .main {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    .navbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      padding: 18px 26px 16px;
+      background: rgba(15, 23, 42, 0.52);
+      border-bottom: 1px solid var(--line);
+      backdrop-filter: blur(8px);
+    }
+
+    .title-wrap h1 {
+      margin: 0;
+      font-size: clamp(1.3rem, 1.5vw, 1.8rem);
+      line-height: 1.2;
+    }
+
+    .title-wrap p {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 0.8rem;
+    }
+
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .search {
+      min-width: 220px;
+      width: min(300px, 42vw);
+      background: rgba(148,163,184,0.06);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 10px 12px;
+      color: var(--text);
+      outline: none;
+    }
+
+    .button {
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.04);
+      color: var(--text);
+      padding: 10px 14px;
+      border-radius: 10px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .button.primary {
+      background: linear-gradient(135deg, var(--primary), #ff8d5d);
+      border: none;
+      box-shadow: 0 10px 24px rgba(239,90,42,0.25);
+    }
+
+    .content {
+      flex: 1;
+      padding: 20px 22px 22px;
+      overflow: hidden;
+    }
+
+    .panel {
+      display: none;
+      height: 100%;
+      overflow-y: auto;
+      padding-right: 6px;
+    }
+
+    .panel.active { display: block; }
+
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .card {
+      background: linear-gradient(180deg, rgba(23,31,45,0.96), rgba(18,27,45,0.96));
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .kpi {
+      padding: 16px;
+      min-height: 118px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .kpi .meta {
+      color: var(--muted);
+      font-size: 0.72rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+
+    .kpi .value {
+      font-size: clamp(1.7rem, 2vw, 2.1rem);
+      font-weight: 800;
+      line-height: 1.1;
+    }
+
+    .kpi .trend {
+      margin-top: 10px;
+      display: inline-flex;
+      align-items: center;
+      width: fit-content;
+      border-radius: 999px;
+      font-size: 0.72rem;
+      padding: 5px 8px;
+      border: 1px solid rgba(72,199,143,0.18);
+      background: rgba(72,199,143,0.1);
+      color: #9ae6be;
+    }
+
+    .kpi:nth-child(2) .trend { background: rgba(239,90,42,0.1); border-color: rgba(239,90,42,0.2); color: #ffc5ae; }
+    .kpi:nth-child(3) .trend { background: rgba(73,160,216,0.1); border-color: rgba(73,160,216,0.2); color: #bfe7ff; }
+    .kpi:nth-child(4) .trend { background: rgba(247,185,85,0.1); border-color: rgba(247,185,85,0.2); color: #f7d894; }
+
+    .span-3 { grid-column: span 3; }
+    .span-4 { grid-column: span 4; }
+    .span-5 { grid-column: span 5; }
+    .span-6 { grid-column: span 6; }
+    .span-7 { grid-column: span 7; }
+    .span-8 { grid-column: span 8; }
+    .span-12 { grid-column: span 12; }
+
+    .analysis-block {
+      padding: 18px 20px 20px;
+      background: linear-gradient(180deg, rgba(23,31,45,0.96), rgba(18,27,45,0.96));
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+    }
+
+    .analysis-block h2 {
+      margin: 0 0 10px;
+      font-size: clamp(1.1rem, 1.4vw, 1.5rem);
+      border-left: 4px solid var(--primary);
+      padding-left: 10px;
+    }
+
+    .analysis-block .lead {
+      margin: 0 0 14px;
+      color: var(--muted);
+      line-height: 1.65;
+      font-size: 0.96rem;
+    }
+
+    .chart-card {
+      padding: 16px 14px 12px;
+      min-height: 270px;
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      margin-bottom: 12px;
+      padding: 2px 4px 0;
+    }
+
+    .card-header h3 { margin: 0; font-size: 0.96rem; }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      padding: 5px 9px;
+      font-size: 0.68rem;
+      background: rgba(239,90,42,0.12);
+      border: 1px solid rgba(239,90,42,0.2);
+      color: #ffd5c4;
+    }
+
+    .chart-box { position: relative; height: 210px; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.86rem;
+    }
+
+    th, td {
+      padding: 8px 10px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+    }
+
+    th {
+      color: var(--muted);
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    td.num { text-align: right; font-variant-numeric: tabular-nums; }
+
+    .callout {
+      border-left: 4px solid var(--warning);
+      background: rgba(247,185,85,0.07);
+      border-radius: 12px;
+      padding: 14px 16px;
+      color: #f6e8b6;
+      margin: 14px 0;
+      font-size: 0.92rem;
+      line-height: 1.6;
+    }
+
+    .callout.blue {
+      border-left-color: var(--accent);
+      background: rgba(73,160,216,0.08);
+      color: #dfeffc;
+    }
+
+    .callout b { color: white; }
+
+    .mini-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .mini-list li {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: rgba(148,163,184,0.04);
+    }
+
+    .mini-list strong { font-size: 1rem; }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 72px;
+      padding: 5px 8px;
+      border-radius: 999px;
+      font-size: 0.7rem;
+      font-weight: 700;
+    }
+
+    .badge.down { background: rgba(239,90,42,0.1); color: #ffc5ae; }
+    .badge.up { background: rgba(72,199,143,0.1); color: #9ae6be; }
+
+    @media (max-width: 980px) {
+      .app { grid-template-columns: 1fr; }
+      .sidebar { display: none; }
+      .navbar { flex-wrap: wrap; padding: 16px 18px; }
+      .search { width: 100%; min-width: unset; }
+      .nav-actions { width: 100%; justify-content: space-between; }
+      .dashboard-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .span-3, .span-4, .span-5, .span-6, .span-7, .span-8, .span-12 { grid-column: span 2; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark">D</div>
+        <div>
+          <h2>Ecuador 2026</h2>         
+        </div>
+      </div>
+
+      <nav class="nav">       
+        <button class="nav-item active" data-target="overview"><span class="dot"></span>Resumen</button>
+        <button class="nav-item" data-target="trend"><span class="dot"></span>Tendencia</button>
+        <button class="nav-item" data-target="regions"><span class="dot"></span>Regiones</button>
+        <button class="nav-item" data-target="victims"><span class="dot"></span>Víctimas</button>
+        <button class="nav-item" data-target="conclusions"><span class="dot"></span>Conclusiones</button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <strong>Indicador clave</strong>
+        <span>Las cuatro provincias costeras concentran más del 80% de los homicidios del país.</span>
+      </div>
+    </aside>
+
+    <div class="main">
+      <header class="navbar">
+        <div class="title-wrap">
+          <h1>Análisis de homicidios intencionales en Ecuador</h1>
+         
+        </div>
+
+        <div class="nav-actions">
+          <button id="exportBtn" class="button">Exportar PDF</button>
+        </div>
+      </header>
+
+      <main class="content">
+        <section class="panel active" id="overview">
+          <div class="dashboard-grid">
+            <div class="card kpi span-3">
+              <div class="meta">Total</div>
+              <div class="value">4.882</div>
+              <div class="trend">▼ 7,3% vs. 2025</div>
+            </div>
+            <div class="card kpi span-3">
+              <div class="meta">Promedio diario</div>
+              <div class="value">23,0</div>
+              <div class="trend">A nivel crítico</div>
+            </div>
+            <div class="card kpi span-3">
+              <div class="meta">Arma de fuego</div>
+              <div class="value">88,2%</div>
+              <div class="trend">Predominio</div>
+            </div>
+            <div class="card kpi span-3">
+              <div class="meta">Hombres</div>
+              <div class="value">91,0%</div>
+              <div class="trend">Perfil principal</div>
+            </div>
+
+            <div class="span-12 analysis-block">
+              <h2>¿Es 2026 el año más violento de la historia de Ecuador?</h2>
+              <p class="lead">La respuesta, con los datos disponibles hoy, es matizada: 2026 sigue siendo un año extremo por estándares históricos, pero no está batiendo el récord de 2025. De hecho, va levemente por debajo. En síntesis: los datos no respaldan que 2026 sea “el año más violento de la historia”, porque ese título, hasta ahora, lo tiene 2025. Lo que sí es correcto decir es que Ecuador atraviesa el periodo más violento de su historia reciente y que 2026 se mantiene en niveles de crisis.</p>
+            </div>
+
+            <div class="card chart-card span-7">
+              <div class="card-header">
+                <h3>Comparación histórica</h3>
+                <span class="chip">2020–2026</span>
+              </div>
+              <div class="chart-box"><canvas id="histChart"></canvas></div>
+            </div>
+
+            <div class="card chart-card span-5">
+              <div class="card-header">
+                <h3>Ranking mundial</h3>
+                <span class="chip">Tasa</span>
+              </div>
+              <div class="chart-box"><canvas id="worldChart"></canvas></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel" id="trend">
+          <div class="dashboard-grid">
+            <div class="span-12 analysis-block">
+              <h2>Evolución mensual dentro de 2026</h2>
+              <p class="lead">Enero fue el mes más violento del periodo (760 casos), con una ligera desaceleración hacia marzo (667) y una tendencia estable, entre 670 y 700 homicidios mensuales, de abril a julio. El dato central es que el año se mantiene en niveles muy altos, pero el patrón no repite el pico más extremo de 2025.</p>
+            </div>
+
+            <div class="card chart-card span-8">
+              <div class="card-header">
+                <h3>Evolución mensual</h3>
+                <span class="chip">Ene–Jul</span>
+              </div>
+              <div class="chart-box"><canvas id="monthChart"></canvas></div>
+            </div>
+
+            <div class="card chart-card span-4">
+              <div class="card-header">
+                <h3>Conclusión</h3>
+                <span class="chip">Nacional</span>
+              </div>
+              <ul class="mini-list">
+                <li><span>2025</span> <strong>9.216</strong> <span class="badge down">Máximo</span></li>
+                <li><span>2026</span> <strong>8.370</strong> <span class="badge up">Proyección</span></li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel" id="regions">
+          <div class="dashboard-grid">
+            <div class="span-12 analysis-block">
+              <h2>¿Dónde ocurre la violencia?</h2>
+              <p class="lead">Solo cuatro provincias costeras — Guayas, Manabí, El Oro y Los Ríos — concentran el 80,3% de todos los homicidios intencionales del país entre enero y julio de 2026, pese a tener menos de la mitad de la población nacional. La violencia sigue siendo, ante todo, un fenómeno de la Costa vinculado a disputas territoriales de bandas por rutas del narcotráfico.</p>
+            </div>
+
+            <div class="card chart-card span-7">
+              <div class="card-header">
+                <h3>Provincias</h3>
+                <span class="chip">Costa</span>
+              </div>
+              <div class="chart-box"><canvas id="provChart"></canvas></div>
+            </div>
+
+            <div class="card chart-card span-5">
+              <div class="card-header">
+                <h3>Top 5</h3>
+                <span class="chip">Casos</span>
+              </div>
+              <table>
+                <tbody>
+                  <tr><th>Provincia</th><th class="num">Casos</th><th class="num">%</th></tr>
+                  <tr><td>Guayas</td><td class="num">2.028</td><td class="num">41,5%</td></tr>
+                  <tr><td>Manabí</td><td class="num">705</td><td class="num">14,4%</td></tr>
+                  <tr><td>El Oro</td><td class="num">634</td><td class="num">13,0%</td></tr>
+                  <tr><td>Los Ríos</td><td class="num">558</td><td class="num">11,4%</td></tr>
+                  <tr><td>Esmeraldas</td><td class="num">196</td><td class="num">4,0%</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel" id="victims">
+          <div class="dashboard-grid">
+            <div class="span-12 analysis-block">
+              <h2>Perfil de las víctimas</h2>
+              <p class="lead">El 91,0% de las víctimas son hombres. El grupo de 18 a 34 años concentra el 58,4% de los casos. De forma alarmante, 357 víctimas (7,5% del total con edad registrada) eran menores de 18 años; más de una y media por día en promedio durante estos siete meses.</p>
+            </div>
+
+            <div class="card chart-card span-4">
+              <div class="card-header">
+                <h3>Sexo</h3>
+                <span class="chip">91%</span>
+              </div>
+              <div class="chart-box"><canvas id="sexoChart"></canvas></div>
+            </div>
+
+            <div class="card chart-card span-4">
+              <div class="card-header">
+                <h3>Edad</h3>
+                <span class="chip">18–34</span>
+              </div>
+              <div class="chart-box"><canvas id="edadChart"></canvas></div>
+            </div>
+
+            <div class="card chart-card span-4">
+              <div class="card-header">
+                <h3>Arma y contexto</h3>
+                <span class="chip">Fuego</span>
+              </div>
+              <div class="chart-box"><canvas id="armaChart"></canvas></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel" id="conclusions">
+          <div class="dashboard-grid">
+            <div class="span-12 analysis-block">
+              <h2>Conclusiones</h2>
+              <p class="lead">Lo que los datos respaldan con solidez: Ecuador atraviesa la crisis de homicidios más grave de su historia moderna; por tasa de homicidios, Ecuador compite por el primer o segundo lugar mundial; la violencia es abrumadoramente letal por arma de fuego, se concentra en cuatro provincias costeras y golpea sobre todo a hombres jóvenes.</p>
+            </div>
+
+            <div class="card chart-card span-6">
+              <div class="card-header">
+                <h3>Hallazgos clave</h3>
+                <span class="chip">Resumen</span>
+              </div>
+              <ul class="mini-list">
+                <li><span>Violencia en la costa</span> <span class="badge down">80,3%</span></li>
+                <li><span>Arma de fuego</span> <span class="badge down">88,2%</span></li>
+                <li><span>Delincuencia común</span> <span class="badge down">96,2%</span></li>
+                <li><span>Ranking mundial</span> <span class="badge down">1°/2°</span></li>
+              </ul>
+            </div>
+
+            <div class="card chart-card span-6">
+              <div class="card-header">
+                <h3>Interpretación</h3>
+                <span class="chip">Contexto</span>
+              </div>
+              <div class="callout">
+                <b>Lo que los datos NO respaldan:</b> que 2026 sea, hasta julio, “el año más violento de la historia”. Esa marca la tiene 2025. El periodo enero-julio de 2026 muestra una caída del 7,3% frente al mismo tramo de 2025.
+              </div>
+              <div class="callout blue">
+                <b>Se mantiene el nivel de crisis:</b> la reducción existe, pero la cifra sigue siendo muy alta y extremadamente preocupante para la seguridad nacional.
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    const navItems = document.querySelectorAll('.nav-item');
+    const panels = document.querySelectorAll('.panel');
+
+    navItems.forEach(button => {
+      button.addEventListener('click', () => {
+        navItems.forEach(item => item.classList.remove('active'));
+        panels.forEach(panel => panel.classList.remove('active'));
+        button.classList.add('active');
+        const target = document.getElementById(button.dataset.target);
+        if (target) target.classList.add('active');
+      });
+    });
+
+    const exportBtn = document.getElementById('exportBtn');
+    exportBtn.addEventListener('click', async () => {
+      const { jsPDF } = window.jspdf;
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const originalStates = [];
+      const panels = [...document.querySelectorAll('.panel')];
+
+      panels.forEach((panel) => {
+        originalStates.push({
+          el: panel,
+          display: panel.style.display,
+          overflow: panel.style.overflow,
+          height: panel.style.height,
+          paddingRight: panel.style.paddingRight,
+          active: panel.classList.contains('active')
+        });
+        panel.style.display = 'block';
+        panel.style.overflow = 'visible';
+        panel.style.height = 'auto';
+        panel.style.paddingRight = '0';
+      });
+
+      const content = document.querySelector('.content');
+      const originalContentOverflow = content.style.overflow;
+      const originalContentPadding = content.style.padding;
+      content.style.overflow = 'visible';
+      content.style.padding = '0';
+
+      try {
+        const canvas = await html2canvas(document.body, {
+          scale: 2,
+          backgroundColor: '#0d1220',
+          useCORS: true
+        });
+
+        const imgData = canvas.toDataURL('image/png');
+        const pageWidth = pdf.internal.pageSize.getWidth();
+        const pageHeight = pdf.internal.pageSize.getHeight();
+        const imgProps = pdf.getImageProperties(imgData);
+        const ratio = Math.min(pageWidth / imgProps.width, pageHeight / imgProps.height);
+        const imgWidth = imgProps.width * ratio;
+        const imgHeight = imgProps.height * ratio;
+        const x = (pageWidth - imgWidth) / 2;
+        const y = (pageHeight - imgHeight) / 2;
+        pdf.addImage(imgData, 'PNG', x, y, imgWidth, imgHeight);
+        pdf.save('dashboard-ecuador-completo.pdf');
+      } finally {
+        panels.forEach((panel, index) => {
+          const state = originalStates[index];
+          panel.style.display = state.display;
+          panel.style.overflow = state.overflow;
+          panel.style.height = state.height;
+          panel.style.paddingRight = state.paddingRight;
+          panel.classList.toggle('active', state.active);
+        });
+
+        content.style.overflow = originalContentOverflow;
+        content.style.padding = originalContentPadding;
+      }
+    });
+
+    const palette = ['#ef5a2a', '#f7b955', '#49a0d8', '#48c78f', '#7a5af8', '#ff7f6a'];
+
+    new Chart(document.getElementById('histChart'), {
+      type: 'bar',
+      data: {
+        labels: ['2020','2021','2022','2023','2024','2025','2026'],
+        datasets: [{
+          label: 'Homicidios',
+          data: [1372,2495,4600,8248,7062,9216,8369],
+          backgroundColor: ['#243146','#243146','#243146','#ef5a2a','#243146','#ef5a2a','#49a0d8'],
+          borderRadius: 8
+        }]
+      },
+      options: {
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { grid: { display: false }, ticks: { color: '#9aa9c4' } },
+          y: { grid: { color: 'rgba(148,163,184,0.12)' }, ticks: { color: '#9aa9c4' } }
+        }
+      }
+    });
+
+    new Chart(document.getElementById('worldChart'), {
+      type: 'bar',
+      data: {
+        labels: ['Jamaica','Ecuador','Sudáfrica','Haití','Honduras','Colombia'],
+        datasets: [{
+          label: 'Tasa',
+          data: [49.3,50.9,43.7,41.2,31.4,24.9],
+          backgroundColor: ['#243146','#ef5a2a','#243146','#243146','#243146','#243146'],
+          borderRadius: 6
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { grid: { color: 'rgba(148,163,184,0.12)' }, ticks: { color: '#9aa9c4' } },
+          y: { grid: { display: false }, ticks: { color: '#ebf0fa' } }
+        }
+      }
+    });
+
+    new Chart(document.getElementById('monthChart'), {
+      type: 'line',
+      data: {
+        labels: ['Ene','Feb','Mar','Abr','May','Jun','Jul'],
+        datasets: [{
+          label: 'Homicidios',
+          data: [760,684,667,677,697,693,704],
+          borderColor: '#ef5a2a',
+          backgroundColor: 'rgba(239,90,42,0.14)',
+          fill: true,
+          tension: 0.35,
+          pointRadius: 4,
+          pointBackgroundColor: '#ef5a2a'
+        }]
+      },
+      options: {
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { grid: { display: false }, ticks: { color: '#9aa9c4' } },
+          y: {
+            min: 600,
+            grid: { color: 'rgba(148,163,184,0.12)' },
+            ticks: { color: '#9aa9c4' }
+          }
+        }
+      }
+    });
+
+    new Chart(document.getElementById('provChart'), {
+      type: 'bar',
+      data: {
+        labels: ['Guayas','Manabí','El Oro','Los Ríos','Esmeraldas','Pichincha'],
+        datasets: [{
+          data: [2028,705,634,558,196,165],
+          backgroundColor: palette,
+          borderRadius: 8
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { grid: { color: 'rgba(148,163,184,0.12)' }, ticks: { color: '#9aa9c4' } },
+          y: { grid: { display: false }, ticks: { color: '#ebf0fa' } }
+        }
+      }
+    });
+
+    new Chart(document.getElementById('sexoChart'), {
+      type: 'doughnut',
+      data: {
+        labels: ['Hombres','Mujeres'],
+        datasets: [{
+          data: [91.0,9.0],
+          backgroundColor: ['#ef5a2a','#49a0d8']
+        }]
+      },
+      options: {
+        maintainAspectRatio: false,
+        cutout: '58%',
+        plugins: { legend: { position: 'bottom', labels: { color: '#9aa9c4' } } }
+      }
+    });
+
+    new Chart(document.getElementById('edadChart'), {
+      type: 'bar',
+      data: {
+        labels: ['<18','18-34','35-54','55+'],
+        datasets: [{
+          data: [7.5,58.4,28.9,5.1],
+          backgroundColor: ['#f7b955','#ef5a2a','#ff7f6a','#49a0d8'],
+          borderRadius: 8
+        }]
+      },
+      options: {
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { grid: { display: false }, ticks: { color: '#9aa9c4' } },
+          y: { grid: { color: 'rgba(148,163,184,0.12)' }, ticks: { color: '#9aa9c4', callback: value => value + '%' } }
+        }
+      }
+    });
+
+    new Chart(document.getElementById('armaChart'), {
+      type: 'doughnut',
+      data: {
+        labels: ['Fuego','Blanca','Otros'],
+        datasets: [{
+          data: [88.2,7.3,4.5],
+          backgroundColor: ['#ef5a2a','#f7b955','#49a0d8']
+        }]
+      },
+      options: {
+        maintainAspectRatio: false,
+        cutout: '58%',
+        plugins: { legend: { position: 'bottom', labels: { color: '#9aa9c4' } } }
+      }
+    });
+  </script>
+</body>
+</html>
